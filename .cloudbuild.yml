@@ -1,0 +1,21 @@
+steps:
+- name: gcr.io/cloud-builders/docker
+  args:
+  - build
+  - -f
+  - Dockerfile
+  - -t
+  - gcr.io/kouzoh-p-nerocrux/sample-rp:$COMMIT_SHA
+  - .
+- name: gcr.io/cloud-builders/docker
+  args:
+  - build
+  - -f
+  - Dockerfile
+  - -t
+  - gcr.io/kouzoh-p-nerocrux/sample-rp:latest
+  - .
+
+images:
+  - gcr.io/kouzoh-p-nerocrux/sample-rp:$COMMIT_SHA
+  - gcr.io/kouzoh-p-nerocrux/sample-rp:latest
