@@ -28,7 +28,7 @@ type Server struct {
 	oauthConfig      oauth2.Config
 	issuer           string
 	userinfoEndpoint string
-	fixedSigningKey  string
+	certsURL         string
 }
 
 type Response struct {
@@ -36,7 +36,7 @@ type Response struct {
 	Message string `json:"message"`
 }
 
-func NewServer(l *zap.Logger, templateDir, op, issuer, clientID, clientSecret, redirectURI, fixedSigningKey string) *Server {
+func NewServer(l *zap.Logger, templateDir, op, issuer, clientID, clientSecret, redirectURI, certsURL string) *Server {
 	server := &Server{}
 	server.zapLogger = l
 	server.templates = Templates{
@@ -44,7 +44,7 @@ func NewServer(l *zap.Logger, templateDir, op, issuer, clientID, clientSecret, r
 		callback: template.Must(template.New("layout.html.tpl").ParseFiles(path.Join(templateDir, "layout.html.tpl"), path.Join(templateDir, "callback.html.tpl"))),
 	}
 
-	server.fixedSigningKey = fixedSigningKey
+	server.certsURL = certsURL
 	server.issuer = issuer
 	server.oauthConfig = oauth2.Config{
 		ClientID:     clientID,

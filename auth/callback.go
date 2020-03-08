@@ -2,17 +2,11 @@ package auth
 
 import (
 	"context"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 
 	"github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
-	"gopkg.in/square/go-jose.v2"
 )
 
 type tokenResponse struct {
@@ -30,12 +24,15 @@ type claims struct {
 	IssuedAt  int      `json:"iat"`
 	Issuer    string   `json:"iss"`
 	JTI       string   `json:"jti"`
+	KID       string   `json:"kid"`
 	Nonce     string   `json:"nonce"`
 }
 
 type callbackScreenParameters struct {
 	Subject  string
 	Audience []string
+	KeyID    string
+	Issuer   string
 	Err      string
 }
 
@@ -63,12 +60,7 @@ func (s *Server) CallbackEndpoint(rw http.ResponseWriter, req *http.Request) err
 	}
 
 	// 3. Verify & parse ID Token
-	keySet, err := getStaticKeySet(s.fixedSigningKey)
-	if err != nil {
-		err := errors.Wrap(err, "cannot fetch public key from file")
-		s.renderErrorScreen(rw, err)
-		return err
-	}
+	keySet := oidc.NewRemoteKeySet(context.TODO(), s.certsURL)
 	verifier := oidc.NewVerifier(s.issuer, keySet, &oidc.Config{ClientID: s.oauthConfig.ClientID})
 	idToken, err := verifier.Verify(ctx, rawIDToken)
 	if err != nil {
@@ -113,7 +105,9 @@ func (s *Server) renderErrorScreen(rw http.ResponseWriter, err error) {
 
 func (s *Server) renderSuccessScreen(rw http.ResponseWriter, claims claims) {
 	if err := s.templates.callback.Execute(rw, callbackScreenParameters{
+		KeyID:    claims.KID,
 		Subject:  claims.Subject,
+		Issuer:   claims.Issuer,
 		Audience: claims.Audience,
 		Err:      "",
 	}); err != nil {
@@ -123,46 +117,4 @@ func (s *Server) renderSuccessScreen(rw http.ResponseWriter, claims claims) {
 
 func getCodeFromCallback(req *http.Request) string {
 	return req.URL.Query().Get("code")
-}
-
-type fixedKeySet struct {
-	key *rsa.PublicKey
-}
-
-func getStaticKeySet(fixedSigningKey string) (oidc.KeySet, error) {
-	content, err := ioutil.ReadFile(fixedSigningKey)
-	if err != nil {
-		return nil, err
-	}
-
-	block, _ := pem.Decode(content)
-	if block == nil {
-		return nil, errors.New("invalid public key data")
-	}
-	if block.Type != "PUBLIC KEY" {
-		return nil, fmt.Errorf("invalid public key type : %s", block.Type)
-	}
-	keyInterface, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-	key, ok := keyInterface.(*rsa.PublicKey)
-	if !ok {
-		return nil, errors.New("not RSA public key")
-	}
-	return &fixedKeySet{
-		key: key,
-	}, nil
-}
-
-func (ks *fixedKeySet) VerifySignature(ctx context.Context, jwt string) (p []byte, err error) {
-	jws, err := jose.ParseSigned(jwt)
-	if err != nil {
-		return nil, fmt.Errorf("oidc: malformed jwt: %v", err)
-	}
-	payload, err := jws.Verify(ks.key)
-	if err == nil {
-		return payload, nil
-	}
-	return nil, errors.Wrap(err, "cannot decode signature")
 }

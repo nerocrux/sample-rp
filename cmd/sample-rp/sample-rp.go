@@ -19,16 +19,16 @@ var (
 )
 
 var (
-	port            = flag.Uint("auth-port", 9001, "auth api port")
-	verbose         = flag.Bool("verbose", false, "enable verbose log")
-	debug           = flag.Bool("debug", false, "enable debug log")
-	templateDir     = flag.String("template-dir", "/etc/rp/static/template", "set template directory")
-	op              = flag.String("op", "", "set op")
-	issuer          = flag.String("issuer", "", "set issuer")
-	clientID        = flag.String("client-id", "", "set client ID")
-	clientSecret    = flag.String("client-secret", "", "set client secret")
-	redirectURI     = flag.String("redirect-uri", "", "set redirect uri")
-	fixedSigningKey = flag.String("fixed-signing-key", "", "key for signing ID Token, will be deprecated")
+	port         = flag.Uint("auth-port", 9001, "auth api port")
+	verbose      = flag.Bool("verbose", false, "enable verbose log")
+	debug        = flag.Bool("debug", false, "enable debug log")
+	templateDir  = flag.String("template-dir", "/etc/rp/static/template", "set template directory")
+	op           = flag.String("op", "", "set op")
+	issuer       = flag.String("issuer", "", "set issuer")
+	clientID     = flag.String("client-id", "", "set client ID")
+	clientSecret = flag.String("client-secret", "", "set client secret")
+	redirectURI  = flag.String("redirect-uri", "", "set redirect uri")
+	certsURL     = flag.String("certs-url", "", "set certs endpoint url")
 )
 
 var zapLogger *zap.Logger
@@ -89,15 +89,15 @@ func startServer(pctx context.Context) {
 
 	eg.Go(func() error {
 		conf := api.ServerConfig{
-			Port:            int(*port),
-			ZapLogger:       zapLogger,
-			TemplateDir:     *templateDir,
-			OP:              *op,
-			Issuer:          *issuer,
-			ClientID:        *clientID,
-			ClientSecret:    *clientSecret,
-			RedirectURI:     *redirectURI,
-			FixedSigningKey: *fixedSigningKey,
+			Port:         int(*port),
+			ZapLogger:    zapLogger,
+			TemplateDir:  *templateDir,
+			OP:           *op,
+			Issuer:       *issuer,
+			ClientID:     *clientID,
+			ClientSecret: *clientSecret,
+			RedirectURI:  *redirectURI,
+			CertsURL:     *certsURL,
 		}
 
 		if err := api.RunServer(ctx, conf); err != nil {

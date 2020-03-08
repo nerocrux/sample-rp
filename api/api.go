@@ -14,15 +14,15 @@ import (
 )
 
 type ServerConfig struct {
-	Port            int
-	TemplateDir     string
-	ZapLogger       *zap.Logger
-	OP              string
-	Issuer          string
-	ClientID        string
-	ClientSecret    string
-	RedirectURI     string
-	FixedSigningKey string
+	Port         int
+	TemplateDir  string
+	ZapLogger    *zap.Logger
+	OP           string
+	Issuer       string
+	ClientID     string
+	ClientSecret string
+	RedirectURI  string
+	CertsURL     string
 }
 
 func RunServer(ctx context.Context, conf ServerConfig) error {
@@ -34,7 +34,7 @@ func RunServer(ctx context.Context, conf ServerConfig) error {
 		conf.ClientID,
 		conf.ClientSecret,
 		conf.RedirectURI,
-		conf.FixedSigningKey,
+		conf.CertsURL,
 	)
 
 	mux := http.NewServeMux()
