@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 )
@@ -24,7 +25,11 @@ func (s *Server) IndexEndpoint(rw http.ResponseWriter, req *http.Request) error 
 		if err != nil {
 			return errors.Wrap(err, "failed generate state")
 		}
-		url := s.oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
+		nonce, err := generateRandomString(10)
+		if err != nil {
+			return errors.Wrap(err, "failed generate nonce")
+		}
+		url := s.oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOffline, oidc.Nonce(nonce))
 
 		wh := rw.Header()
 		wh.Set("Location", url)

@@ -10,10 +10,6 @@
                         <p>{{.Subject}}</p>
                     </li>
                     <li class="list-group-item">
-                        <span class="badge badge-primary">KeyID</span>
-                        <p>{{.KeyID}}</p>
-                    </li>
-                    <li class="list-group-item">
                         <span class="badge badge-primary">Issuer</span>
                         <p>{{.Issuer}}</p>
                     </li>
@@ -23,6 +19,14 @@
                         <p>{{$val}}</p>
                     </li>
                     {{end}}
+                    <li class="list-group-item">
+                        <span class="badge badge-primary">Nonce</span>
+                        <p>{{.Nonce}}</p>
+                    </li>
+                    <li class="list-group-item">
+                        <span class="badge badge-primary">AccessTokenHash</span>
+                        <p>{{.AccessTokenHash}}</p>
+                    </li>
                 </ul>
             </h4>
         </div>

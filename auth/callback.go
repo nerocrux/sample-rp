@@ -17,23 +17,23 @@ type tokenResponse struct {
 }
 
 type claims struct {
-	Subject   string   `json:"sub"`
-	Audience  []string `json:"aud"`
-	AuthTime  int      `json:"auth_time"`
-	ExpiredAt int      `json:"exp"`
-	IssuedAt  int      `json:"iat"`
-	Issuer    string   `json:"iss"`
-	JTI       string   `json:"jti"`
-	KID       string   `json:"kid"`
-	Nonce     string   `json:"nonce"`
+	Subject         string   `json:"sub"`
+	Audience        []string `json:"aud"`
+	ExpiredAt       int      `json:"exp"`
+	IssuedAt        int      `json:"iat"`
+	Issuer          string   `json:"iss"`
+	Nonce           string   `json:"nonce"`
+	AccessTokenHash string   `json:"at_hash"`
 }
 
 type callbackScreenParameters struct {
-	Subject  string
-	Audience []string
-	KeyID    string
-	Issuer   string
-	Err      string
+	Subject         string
+	Audience        []string
+	KeyID           string
+	Issuer          string
+	Nonce           string
+	AccessTokenHash string
+	Err             string
 }
 
 func (s *Server) CallbackEndpoint(rw http.ResponseWriter, req *http.Request) error {
@@ -61,7 +61,10 @@ func (s *Server) CallbackEndpoint(rw http.ResponseWriter, req *http.Request) err
 
 	// 3. Verify & parse ID Token
 	keySet := oidc.NewRemoteKeySet(context.TODO(), s.certsURL)
-	verifier := oidc.NewVerifier(s.issuer, keySet, &oidc.Config{ClientID: s.oauthConfig.ClientID})
+	verifier := oidc.NewVerifier(s.issuer, keySet, &oidc.Config{
+		ClientID:             s.oauthConfig.ClientID,
+		SupportedSigningAlgs: []string{"ES256"},
+	})
 	idToken, err := verifier.Verify(ctx, rawIDToken)
 	if err != nil {
 		err := errors.Wrap(err, "failed verify ID Token")
@@ -105,11 +108,12 @@ func (s *Server) renderErrorScreen(rw http.ResponseWriter, err error) {
 
 func (s *Server) renderSuccessScreen(rw http.ResponseWriter, claims claims) {
 	if err := s.templates.callback.Execute(rw, callbackScreenParameters{
-		KeyID:    claims.KID,
-		Subject:  claims.Subject,
-		Issuer:   claims.Issuer,
-		Audience: claims.Audience,
-		Err:      "",
+		Nonce:           claims.Nonce,
+		AccessTokenHash: claims.AccessTokenHash,
+		Subject:         claims.Subject,
+		Issuer:          claims.Issuer,
+		Audience:        claims.Audience,
+		Err:             "",
 	}); err != nil {
 		log.Fatalf("failed to render callback screen")
 	}
